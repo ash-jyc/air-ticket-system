@@ -45,19 +45,15 @@ def search_flights():
         WHERE 1=1
     """
     params = []
-    if source or destination or date:
-        if source:
-            query += " AND depart.name = %s"
-            params.append(source)
-        if destination:
-            query += " AND arrive.name = %s"
-            params.append(destination)
-        if date:
-            query += " AND DATE(depart.departure_time) = %s"
-            params.append(date)
-    else:
-        query += " AND source = %s AND destination = %s AND DATE(date) = %s"
-        params = [source, destination, date]
+    if source:
+        query += " AND depart.name = %s"
+        params.append(source)
+    if destination:
+        query += " AND arrive.name = %s"
+        params.append(destination)
+    if date:
+        query += " AND DATE(depart.departure_time) = %s"
+        params.append(date)
 
     # Execute the query
     cursor.execute(query, params)
