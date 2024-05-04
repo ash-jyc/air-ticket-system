@@ -87,10 +87,18 @@ def flight_status_form():
         FROM flight f
         JOIN depart d ON f.flight_number = d.flight_number
         JOIN arrive a ON f.flight_number = a.flight_number
-        WHERE d.flight_number = %s AND DATE(d.departure_time) = %s
+        WHERE 1=1
     """
     
-    cursor.execute(query, (flight_number, date))
+    params = []
+    if date:
+        query += " AND (DATE(d.departure_time) = %s OR DATE(a.arrival_time) = %s)"
+        params.append(date)
+    if flight_number:
+        query += " AND f.flight_number = %s"
+        params.append(flight_number)
+    
+    cursor.execute(query, params)
     flight_details = cursor.fetchall()
     cursor.close()
     conn.close()
