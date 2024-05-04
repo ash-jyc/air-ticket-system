@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Flights</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <script src="{{ url_for('static', filename='js/search-flights.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flight-status.js') }}"></script>
 
 </head>
 <body>
     {% extends "base.html" %}
 
-    {% block title %}Search Flights{% endblock %}
+    {% block title %}Check Flight Status{% endblock %}
 
     {% block content %}
     <div>
         <form id="searchForm" action="/search-flights" method="post">
-            <label for="source">From:</label>
-            <input type="text" id="source" name="source">
-            <label for="destination">To:</label>
-            <input type="text" id="destination" name="destination">
+            <label for="flight_number">Flight Number:</label>
+            <input type="text" id="flight_number" name="flight_number">
             <label for="date">Date:</label>
             <input type="date" id="date" name="date">
             <button type="submit">Search</button>

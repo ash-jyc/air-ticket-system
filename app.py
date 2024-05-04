@@ -23,11 +23,15 @@ def get_db_connection():
 def home():
     return render_template('search-flights.html')
 
+@app.route('/search-flights')
+def search_flights():
+    return render_template('search-flights.html')
+
 # Search flights
 @app.route('/search-flights', methods=['POST'])
-def search_flights():
+def search_flights_form():
     # Connect to the database
-    conn =get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     # Retrieve form data
@@ -36,23 +40,22 @@ def search_flights():
     date = request.form['date']
 
     # Build the SQL query dynamically based on input
-    # Build the SQL query dynamically based on input
     query = """
-        SELECT flight.flight_number, flight.status, depart.departure_time, arrive.arrival_time
-        FROM flight
-        JOIN depart ON flight.flight_number = depart.flight_number
-        JOIN arrive ON flight.flight_number = arrive.flight_number
+        SELECT f.flight_number, f.status, d.departure_time, a.arrival_time
+        FROM flight f
+        JOIN depart d ON f.flight_number = d.flight_number
+        JOIN arrive a ON f.flight_number = a.flight_number
         WHERE 1=1
     """
     params = []
     if source:
-        query += " AND depart.name = %s"
+        query += " AND d.name = %s"
         params.append(source)
     if destination:
-        query += " AND arrive.name = %s"
+        query += " AND a.name = %s"
         params.append(destination)
     if date:
-        query += " AND DATE(depart.departure_time) = %s"
+        query += " AND DATE(d.departure_time) = %s"
         params.append(date)
 
     # Execute the query
@@ -66,28 +69,32 @@ def search_flights():
     # Respond with JSON
     return jsonify(flights)
 
-
-
-
 # Flight status
-@app.route('/flight-status', methods=['POST'])
+@app.route('/flight-status')
 def flight_status():
+    return render_template('flight-status.html')
+
+@app.route('/flight-status', methods=['POST'])
+def flight_status_form():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
     flight_number = request.form['flight_number']
     date = request.form['date']  # This is either the departure or arrival date.
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    
     query = """
-        SELECT flight.flight_number, flight.status, depart.departure_time, arrive.arrival_time
-        FROM flight
-        JOIN depart ON flight.flight_number = depart.flight_number
-        JOIN arrive ON flight.flight_number = arrive.flight_number
-        WHERE flight.flight_number = %s AND DATE(depart.departure_time) = %s
+        SELECT f.flight_number, f.status, d.departure_time, a.arrival_time
+        FROM flight f
+        JOIN depart d ON f.flight_number = d.flight_number
+        JOIN arrive a ON f.flight_number = a.flight_number
+        WHERE d.flight_number = %s AND DATE(d.departure_time) = %s
     """
+    
     cursor.execute(query, (flight_number, date))
     flight_details = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('flight-status.html', flight_details=flight_details)
+    return jsonify(flight_details)
 
 # Registration
 @app.route('/register', methods=['GET', 'POST'])
