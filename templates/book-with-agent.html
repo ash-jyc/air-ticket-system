@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Book Flight</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="{{ url_for('static', filename='js/book-with-agent') }}"></script>
+
+</head> 
+
+<body>
+    <div>
+        <h1>Book Flight</h1>
+        <form id="searchForm" action="/api/book-with-agent" method="post">
+            <label for="customer_email">Customer Email:</label>
+            <input type="text" id="customer_email" name="customer_email">
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>

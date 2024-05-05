@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Send POST request to the server with the form data
-        fetch('/api-flight-status', {
+        fetch('/api/flight-status', {
             method: 'POST',
             body: searchParams,
             headers: {
@@ -31,7 +31,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayFlights(flights) {
         console.log(flights)
-        const flightsContainer = document.createElement('div');
+        // check if the flights container already exists
+        let flightsContainer = document.getElementById('home-page');
+        if (flightsContainer) {
+            flightsContainer.remove();
+        }
+
+        flightsContainer = document.createElement('div');
         flightsContainer.id = 'flights-container';
         flightsContainer.innerHTML = '';  // Clear previous results
         document.body.appendChild(flightsContainer);

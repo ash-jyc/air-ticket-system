@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Send POST request to the server with the form data
-        fetch('/api-search-flights', {
+        fetch('/api/search-flights', {
             method: 'POST',
             body: searchParams,
             headers: {
@@ -31,7 +31,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayFlights(flights) {
         console.log(flights)
-        const flightsContainer = document.createElement('div');
+
+        let flightsContainer = document.getElementById('flights-container');
+        if (flightsContainer) {
+            flightsContainer.remove();
+        }
+
+        flightsContainer = document.createElement('div');
         flightsContainer.id = 'flights-container';
         flightsContainer.innerHTML = '';  // Clear previous results
         document.body.appendChild(flightsContainer);
@@ -76,7 +82,11 @@ function bookFlight(flightNumber) {
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
+        if (data.redirect) {
+            window.location.href = data.redirect + '?flight_number=' + flightNumber;
+        } else {
+            alert(data.message);
+        }
     })
     .catch(error => {
         console.error('Error booking the flight:', error);

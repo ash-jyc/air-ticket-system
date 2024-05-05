@@ -28,7 +28,7 @@ def search_flights():
     return render_template('search-flights.html')
 
 # Search flights
-@app.route('/api-search-flights', methods=['POST'])
+@app.route('/api/search-flights', methods=['POST'])
 def search_flights_form():
     # Connect to the database
     conn = get_db_connection()
@@ -79,13 +79,68 @@ def book_flight():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    flight_number = request.get_json()['flight_number']
-    query = """
-        INSERT INTO ticket (ticket_id, flight_num)
-        VALUES (%s, %s)
-    """
+    user_type = session.get('user_type')
+
+    if user_type == 'Customer':
+        flight_number = request.get_json()['flight_number']
+        customer_email = session.get('username')
+        
+        query = """
+            INSERT INTO ticket (flight_num) VALUES (%s)
+        """
+        cursor.execute(query, (flight_number,))
+        
+        ticket_id = cursor.lastrowid    
+        query = """
+            INSERT INTO purchase (ticket_id, customer_email, agent_email, date)
+            VALUES (%s, %s, NULL, CURDATE())
+        """
+        
+        cursor.execute(query, (ticket_id, customer_email))
+        
+    elif user_type == "BookingAgent":
+        print("user_type", user_type)
+        return jsonify({'redirect': '/book-with-agent', 'flight_number': request.get_json()['flight_number']})
     
-    cursor.execute(query, (5, flight_number))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Flight booked successfully!'})
+
+@app.route('/book-with-agent')
+def book_with_agent():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    return render_template('book-with-agent.html')
+
+@app.route('/api/book-with-agent', methods=['POST'])
+def book_with_agent_form():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    agent_email = session.get('username')
+    customer_email = request.get_json()['customer_email']
+    flight_number = request.get_json()['flight_number']
+    
+    query = """
+        INSERT INTO ticket (flight_num) VALUES (%s)
+    """
+    cursor.execute(query, (flight_number,))
+    
+    ticket_id = cursor.lastrowid
+    query = """
+        INSERT INTO purchase (ticket_id, customer_email, agent_email, date)
+        VALUES (%s, %s, %s, CURDATE())
+    """
+    cursor.execute(query, (ticket_id, customer_email, agent_email))
+    
+    print("ticket_id", ticket_id)
     conn.commit()
     cursor.close()
     conn.close()
@@ -96,7 +151,7 @@ def book_flight():
 def flight_status():
     return render_template('flight-status.html')
 
-@app.route('/api-flight-status', methods=['POST'])
+@app.route('/api/flight-status', methods=['POST'])
 def flight_status_form():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -220,10 +275,6 @@ def register():
 
         return redirect(url_for('home'))
 
-@app.route('/login', methods=['GET', 'POST'])
-def get_db_connection():
-    conn = mysql.connect(**db_config)
-    return conn
 ########################login------------------------------------------
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -248,11 +299,7 @@ def login():
     return render_template('login.html')
 
 # View user's flights
-@app.route('/my-flights')
-def my_flights():
-    return render_template('my-flights.html')
-
-@app.route('/api-my-flights', methods=['GET'])
+@app.route('/api/my-flights', methods=['GET'])
 def my_flights_form():
     user_id = session.get('user_id')
     if not user_id:
@@ -261,15 +308,18 @@ def my_flights_form():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
+    user_name = session.get('username')
+    
     flights = []
     query = """
-        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time
+        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time, f.price
         FROM flight f
         JOIN ticket t ON f.flight_num = t.flight_num
-        WHERE t.ticket_id = %s
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.customer_email = %s
     """
     
-    cursor.execute(query, (user_id,))
+    cursor.execute(query, (user_name,))
     flights = cursor.fetchall()
     print("flights", flights)
     
@@ -277,12 +327,16 @@ def my_flights_form():
 
 @app.route('/home')
 def user_home():
+    print(session)
+    session['user_type'] = 'BookingAgent'
+    session['username'] = 'test2'
+    session['user_id'] = 1
     if 'username' in session:
         user_type = session.get('user_type')
         if user_type == 'Customer':
-            return render_template('customer_home.html', username=session['username'])
+            return render_template('customer-home.html', username=session['username'])
         elif user_type == 'BookingAgent':
-            return render_template('agent_home.html', username=session['username'])
+            return render_template('agent-home.html', username=session['username'])
         elif user_type == 'AirlineStaff':
             return render_template('staff_home.html', username=session['username'])
         else:
