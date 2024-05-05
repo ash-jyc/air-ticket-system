@@ -9,9 +9,9 @@ body {
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 0;
+    padding: 200px 0;
     background-color: #8A2BE2; /* Fallback for when image doesn't load */
-    overflow-y: scroll; /* 增加垂直滚动条 */
+    overflow-y: auto; /* 增加垂直滚动条 */
 }
 
 /* General form styles */
@@ -21,7 +21,7 @@ form {
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     width: 90%;
-    max-width: 300px
+    max-width: 300px;
 }
 
 input, select {
@@ -90,7 +90,7 @@ li {
 }
 
 /* flight styles */
-/* #flights-container {
+#flights-container {
     width: 100%;
     padding: 5px;
     margin: 5px 0;
@@ -99,7 +99,7 @@ li {
     background-color: #fff;
     color: #333;
     font-size: 16px;
-} */
+}
 
 .flight {
     border-bottom: 1px solid #ddd;

@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             alert('Flight booked successfully!');
-            window.location = '/my-flights';
+            window.location = '/agent-home';
         })
         .catch(error => {
             console.error('Error booking the flight:', error);

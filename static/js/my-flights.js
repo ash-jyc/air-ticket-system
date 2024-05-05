@@ -43,4 +43,66 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         homeContainer.appendChild(flightsContainer);
     }
+
+    fetch('/api/track-spending', {
+        method: 'GET',
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Fetched spending data:', data);
+            displaySpending(data);
+        })
+        .catch(error => {
+            console.error('Error fetching the spending:', error);
+            alert('Failed to fetch spending. Please try again.');
+        });
+    
+    function displaySpending(spending) {
+        const homeContainer = document.getElementById('home-container');  // Ensure this exists in your HTML
+        const spendingContainer = document.createElement('div');
+        spendingContainer.id = 'spending-container';
+        spendingContainer.innerHTML = '';  // Clear previous results
+    
+        if (spending.length === 0) {
+            spendingContainer.innerHTML = '<p>No spending found.</p>';
+        } else {
+            // Calculate total spending from all fetched data
+            const totalSpending = spending.reduce((total, spend) => total + parseFloat(spend.total_spent), 0).toFixed(2);
+            const spendingDiv = document.createElement('div');
+            spendingDiv.innerHTML = `<p>Total Spending: $${totalSpending}</p>`;
+            spendingContainer.appendChild(spendingDiv);
+    
+            const canvas = document.createElement('canvas');
+            canvas.id = 'spendingChart';
+            spendingContainer.appendChild(canvas);
+    
+            const months = spending.map(spend => spend.month);
+            const amounts = spending.map(spend => spend.total_spent);
+    
+            const ctx = canvas.getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: amounts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        homeContainer.appendChild(spendingContainer);
+    }
+    
+
 });

@@ -18,6 +18,16 @@ def get_db_connection():
     conn = mysql.connect(**db_config)
     return conn
 
+"""Book a flight
+
+Keyword arguments:
+user_id -- user's ID
+flight_number -- flight number
+customer_email -- customer's email
+agent_email -- agent's email
+date -- date of booking
+"""
+
 @app.route('/search-flights')
 def search_flights():
     return render_template('search-flights.html')
@@ -78,7 +88,8 @@ def book_flight():
 
     if user_type == 'Customer':
         flight_number = request.get_json()['flight_number']
-        customer_email = session.get('username')
+        customer_email = session.get('user_id')
+        print("customer_email", customer_email)
         
         query = """
             INSERT INTO ticket (flight_num) VALUES (%s)
@@ -102,6 +113,14 @@ def book_flight():
     conn.close()
     return jsonify({'message': 'Flight booked successfully!'})
 
+"""Agent booking
+
+Keyword arguments:
+user_id -- user's ID
+customer_email -- customer's email
+flight_number -- flight number
+"""
+
 @app.route('/book-with-agent')
 def book_with_agent():
     user_id = session.get('user_id')
@@ -119,7 +138,7 @@ def book_with_agent_form():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    agent_email = session.get('username')
+    agent_email = session.get('user_id')
     customer_email = request.get_json()['customer_email']
     flight_number = request.get_json()['flight_number']
     
@@ -141,7 +160,35 @@ def book_with_agent_form():
     conn.close()
     return jsonify({'message': 'Flight booked successfully!'})
 
-# Flight status
+@app.route('/api/booked-flights', methods=['GET'])
+def booked_flights():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Perform a query to get all flights booked by agent
+    agent_email = session.get('user_id')
+    query = """
+        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time, f.price, b.comission
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        JOIN booking_agent b ON p.agent_email = b.email
+        WHERE p.agent_email = %s
+    """
+    cursor.execute(query, (agent_email,))
+    flights = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return jsonify(flights)
+    
+"""View flight status
+
+Keyword arguments:
+flight_number -- flight number
+date -- date of departure or arrival
+"""
+
 @app.route('/flight-status')
 def flight_status():
     return render_template('flight-status.html')
@@ -166,7 +213,20 @@ def flight_status_form():
     conn.close()
     return jsonify(flight_details)
 
-# Here is for register selection choose your type
+"""Registration and login
+
+Keyword arguments:
+type -- user type (Customer, BookingAgent, AirlineStaff)
+email -- user's email
+password -- user's password
+booking_agent_id -- booking agent's ID
+other user information...
+"""
+
+@app.route('/')
+def index():
+    return redirect(url_for('select_type'))
+
 @app.route('/select-type')
 def select_type():
     return render_template('select-type.html')
@@ -211,6 +271,7 @@ def register():
                 )
 
             elif user_type == 'Customer':
+                email = request.form['email']
                 #先检查数据库里存不存在已注册
                 cursor.execute("SELECT * FROM customer WHERE email = %s", (email,))
                 if cursor.fetchone() is not None:
@@ -304,16 +365,22 @@ def login():
 
             # 根据用户类型重定向到不同的主页
             home_page = {
-                'Customer': 'customer-home',
-                'BookingAgent': 'agent-home',
-                'AirlineStaff': 'staff-home'
+                'Customer': 'customer_home',
+                'BookingAgent': 'agent_home',
+                'AirlineStaff': 'staff_home'
             }.get(user_type, 'home')
 
             return redirect(url_for(home_page))
         else:
             flash('Login unsuccessful. Please check username and password.')
             return render_template('login.html', type=user_type)
-# View user's flights
+
+"""User view flights
+
+Keyword arguments:
+user_id -- user's ID
+"""
+
 @app.route('/api/my-flights', methods=['GET'])
 def my_flights_form():
     user_id = session.get('user_id')
@@ -323,7 +390,7 @@ def my_flights_form():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    user_name = session.get('username')
+    user_name = session.get('user_id')
     
     flights = []
     query = """
@@ -340,6 +407,54 @@ def my_flights_form():
     
     return jsonify(flights)
 
+"""User track spending"""
+@app.route('/api/track-spending', methods=['GET'])
+def track_spending():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_name = session.get('user_id')
+    
+    query = """
+        SELECT SUM(f.price) AS total_spent, MONTH(p.date) AS month, YEAR(p.date) AS year
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.customer_email = %s AND p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+        GROUP BY month, year
+        ORDER BY year DESC, month DESC
+    """
+    
+    cursor.execute(query, (user_name,))
+    spending = cursor.fetchall()
+    print("spending", spending)
+    formatted_data = [
+        {"total_spent": spend['total_spent'], "month": f"{spend['year']}-{spend['month']:02d}"}
+        for spend in spending
+    ]
+    
+    return jsonify(formatted_data)
+
+"""Choose home page
+
+Keyword arguments:
+user_type -- user type (Customer, BookingAgent, AirlineStaff)
+"""
+
+@app.route('/home')
+def home():
+    user_type = session.get('user_type')
+    if user_type == 'Customer':
+        return redirect(url_for('customer_home'))
+    elif user_type == 'BookingAgent':
+        return redirect(url_for('agent_home'))
+    else:
+        return redirect(url_for('staff_home'))
+
 @app.route('/customer-home')
 def customer_home():
     if 'user_type' in session and session['user_type'] == 'Customer':
@@ -347,7 +462,7 @@ def customer_home():
     return redirect(url_for('login', type='Customer'))
 
 @app.route('/agent-home')
-def bookingagent_home():
+def agent_home():
     if 'user_type' in session and session['user_type'] == 'BookingAgent':
         return render_template('agent-home.html')
     return redirect(url_for('login', type='BookingAgent'))

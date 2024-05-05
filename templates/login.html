@@ -7,6 +7,34 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <!--redirect user directly to home page-->
-    <button onclick="location.href='{{ url_for('user_home') }}'">Home</button>
+    <div class="container">
+        <h2>Login - {{ type }}</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="alert alert-danger">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('login') }}" method="post">
+            <input type="hidden" name="type" value="{{ type }}">
+            <div class="mb-3">
+                {% if type == 'AirlineStaff' %}
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                {% else %}
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
 </body>
+</html>
