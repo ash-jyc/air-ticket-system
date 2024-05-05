@@ -36,10 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 flightsContainer.appendChild(flightDiv);
             });
 
-            const totalSpending = flights.reduce((total, flight) => total + flight.price, 0);
-            const spendingDiv = document.createElement('div');
-            spendingDiv.innerHTML = `<p>Total Spending: $${totalSpending}</p>`;
-            flightsContainer.appendChild(spendingDiv);
         }
         homeContainer.appendChild(flightsContainer);
     }
