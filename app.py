@@ -110,7 +110,7 @@ def flight_status_form():
         WHERE f.flight_num = %s AND (DATE(f.depart_time) = %s)
     """
     
-    cursor.execute(query, params)
+    cursor.execute(query, (flight_number, date))
     flight_details = cursor.fetchall()
     cursor.close()
     conn.close()
