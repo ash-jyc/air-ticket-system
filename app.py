@@ -71,19 +71,21 @@ def search_flights_form():
 @app.route('/book-flight', methods=['POST'])
 def book_flight():
     user_id = session.get('user_id')
-    if not user_id:
+    if not user_id:  
         return redirect(url_for('login'))
+    
+    print("user_id", user_id)
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    flight_number = request.form['flight_number']
+    flight_number = request.get_json()['flight_number']
     query = """
-        INSERT INTO ticket (flight_num, user_id)
+        INSERT INTO ticket (ticket_id, flight_num)
         VALUES (%s, %s)
     """
     
-    cursor.execute(query, (flight_number, user_id))
+    cursor.execute(query, (5, flight_number))
     conn.commit()
     cursor.close()
     conn.close()
@@ -125,10 +127,9 @@ def register():
 # Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        # Implement login logic
-        pass
-    return render_template('login.html')
+    # default allow for book flight testing
+    session['user_id'] = '001'
+    return redirect(url_for('home'))
 
 # View user's flights
 @app.route('/my-flights')

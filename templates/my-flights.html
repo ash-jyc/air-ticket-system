@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Flights</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="{{ url_for('static', filename='js/my-flights.js') }}"></script>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block title %}My Flights{% endblock %}
+
+    {% block content %}
+    <div>
+        <h1>My Flights</h1>
+        <ul id="flights">
+            <!-- Display user's flights here -->
+        </ul>
+    </div>
+    {% endblock %}
+
+</body>
