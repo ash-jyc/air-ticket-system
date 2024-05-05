@@ -41,21 +41,19 @@ def search_flights_form():
 
     # Build the SQL query dynamically based on input
     query = """
-        SELECT f.flight_number, f.status, d.departure_time, a.arrival_time
+        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time
         FROM flight f
-        JOIN depart d ON f.flight_number = d.flight_number
-        JOIN arrive a ON f.flight_number = a.flight_number
         WHERE 1=1
     """
     params = []
     if source:
-        query += " AND d.name = %s"
+        query += " AND f.depart_airport = %s"
         params.append(source)
     if destination:
-        query += " AND a.name = %s"
+        query += " AND f.arrive_airport = %s"
         params.append(destination)
     if date:
-        query += " AND DATE(d.departure_time) = %s"
+        query += " AND DATE(f.depart_time) = %s"
         params.append(date)
 
     # Execute the query
@@ -67,7 +65,29 @@ def search_flights_form():
     conn.close()
 
     # Respond with JSON
+    print(flights)
     return jsonify(flights)
+
+@app.route('/book-flight', methods=['POST'])
+def book_flight():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    flight_number = request.form['flight_number']
+    query = """
+        INSERT INTO ticket (flight_num, user_id)
+        VALUES (%s, %s)
+    """
+    
+    cursor.execute(query, (flight_number, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'message': 'Flight booked successfully!'})
 
 # Flight status
 @app.route('/flight-status')
@@ -83,11 +103,9 @@ def flight_status_form():
     date = request.form['date']  # This is either the departure or arrival date.
     
     query = """
-        SELECT f.flight_number, f.status, d.departure_time, a.arrival_time
+        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time
         FROM flight f
-        JOIN depart d ON f.flight_number = d.flight_number
-        JOIN arrive a ON f.flight_number = a.flight_number
-        WHERE d.flight_number = %s AND DATE(d.departure_time) = %s
+        WHERE f.flight_num = %s AND (DATE(f.depart_time) = %s)
     """
     
     cursor.execute(query, (flight_number, date))
@@ -112,5 +130,28 @@ def login():
         pass
     return render_template('login.html')
 
+# View user's flights
+@app.route('/my-flights')
+def my_flights():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    flights = []
+    query = """
+        SELECT f.flight_number, f.status, f.depart_time, f.arrive_time
+        FROM flight f
+        JOIN ticket t ON f.flight_number = t.flight_number
+        WHERE t.user_id = %s
+    """
+    
+    cursor.execute(query, (user_id,))
+    flights = cursor.fetchall()
+    
+    return render_template('my-flights.html', flights=flights)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001, host='127.0.0.1')

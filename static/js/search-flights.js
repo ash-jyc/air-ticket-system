@@ -31,8 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayFlights(flights) {
         console.log(flights)
-        const flightsContainer = document.getElementById('flights');
+        const flightsContainer = document.createElement('div');
+        flightsContainer.id = 'flights-container';
         flightsContainer.innerHTML = '';  // Clear previous results
+        document.body.appendChild(flightsContainer);
+
 
         if (flights.length === 0) {
             flightsContainer.innerHTML = '<p>No flights found.</p>';
@@ -44,12 +47,39 @@ document.addEventListener('DOMContentLoaded', function() {
             const flightDiv = document.createElement('div');
             flightDiv.className = 'flight';
             flightDiv.innerHTML = `
-                <p>Flight Number: ${flight.flight_number}</p>
+                <p>Flight Number: ${flight.flight_num}</p>
                 <p>Status: ${flight.status}</p>
-                <p>Departure Time: ${new Date(flight.departure_time).toLocaleString()}</p>
-                <p>Arrival Time: ${new Date(flight.arrival_time).toLocaleString()}</p>
+                <p>Departure Time: ${new Date(flight.depart_time).toLocaleString()}</p>
+                <p>Arrival Time: ${new Date(flight.arrive_time).toLocaleString()}</p>
             `;
             flightsContainer.appendChild(flightDiv);
+
+            if (flight.status === 'upcoming') {
+                const bookButton = document.createElement('button');
+                bookButton.innerHTML = 'Book';
+                bookButton.addEventListener('click', function() {
+                    bookFlight(flight.flight_num);
+                });
+                flightDiv.appendChild(bookButton);
+            }
         });
     }
 });
+
+function bookFlight(flightNumber) {
+    fetch('/book-flight', {
+        method: 'POST',
+        body: JSON.stringify({ flight_number: flightNumber }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error('Error booking the flight:', error);
+        alert('Failed to book the flight. Please try again.');
+    });
+}

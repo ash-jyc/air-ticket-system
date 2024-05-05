@@ -39,7 +39,7 @@ button:hover {
     background-color: #5058cc;
 }
 
-#flights {
+#flights-container {
     margin-top: 20px;
     background: white;
     padding: 20px;
