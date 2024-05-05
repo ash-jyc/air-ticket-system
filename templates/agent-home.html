@@ -16,14 +16,16 @@
     <div>
         <div id="home-container">
             <h3>Booking Agent Home</h3>
+
+            <form id="commission-form">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date">
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date">
+                <button type="submit">Track Commission</button>
+            </form>
         </div>
-        <form id="commission-form">
-            <label for="start_date">Start Date:</label>
-            <input type="date" id="start_date" name="start_date">
-            <label for="end_date">End Date:</label>
-            <input type="date" id="end_date" name="end_date">
-            <button type="submit">Track Commission</button>
-        </form>
+        
     </div>
     {% endblock %}
 
