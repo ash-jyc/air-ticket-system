@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p>Status: ${flight.status}</p>
                 <p>Departure Time: ${new Date(flight.depart_time).toLocaleString()}</p>
                 <p>Arrival Time: ${new Date(flight.arrive_time).toLocaleString()}</p>
-                <p>Price: $${flight.price}</p>
+                <p>Price: ¥${flight.price}</p>
             `;
                 flightsContainer.appendChild(flightDiv);
             });
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Calculate total spending from all fetched data
             const totalSpending = spending.reduce((total, spend) => total + parseFloat(spend.total_spent), 0).toFixed(2);
             const spendingDiv = document.createElement('div');
-            spendingDiv.innerHTML = `<p>Total Spending: $${totalSpending}</p>`;
+            spendingDiv.innerHTML = `<p>Total Spending: ¥${totalSpending}</p>`;
             spendingContainer.appendChild(spendingDiv);
     
             const canvas = document.createElement('canvas');

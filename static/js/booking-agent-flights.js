@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <p>Status: ${flight.status}</p>
             <p>Departure Time: ${new Date(flight.depart_time).toLocaleString()}</p>
             <p>Arrival Time: ${new Date(flight.arrive_time).toLocaleString()}</p>
-            <p>Commission: $${flight.comission * flight.price}</p>
+            <p>Commission: ¥${flight.comission * flight.price}</p>
         `;
                 flightsContainer.appendChild(flightElement);
             });
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const commissionDiv = document.createElement('div');
             commissionDiv.className = 'commission';
             commissionDiv.innerHTML = `
-                <p>Total Commission: $${commission.total_commission.toFixed(2)}</p>
+                <p>Total Commission: ¥${commission.total_commission.toFixed(2)}</p>
                 <p>Total Tickets Sold: ${commission.total_tickets}</p>
             `;
             commissionContainer.appendChild(commissionDiv);
