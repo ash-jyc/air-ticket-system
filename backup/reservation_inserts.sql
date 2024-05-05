@@ -48,8 +48,8 @@ VALUES
 INSERT INTO booking_agent
     (email, password, booking_agent_id)
 VALUES
-    ('Jake Farmfield', 'password123', 1),
-    ('Sally Smith', 'SuperSecure889', 2);
+    ('jakefarmfield@gmail.com', 'password123', 1),
+    ('sallyiscool123@outlook.com', 'SuperSecure889', 2);
 
 INSERT INTO employed_by
     (booking_agent_id, name, commission)
