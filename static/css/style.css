@@ -79,6 +79,12 @@ li {
     }
 }
 
+.container {
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
 /* Home page styles */
 #home-container {
     background: rgba(0, 0, 0, 0.9);
