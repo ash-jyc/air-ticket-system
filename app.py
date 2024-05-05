@@ -469,6 +469,51 @@ def track_commission_form():
     
     return jsonify(commission)
 
+@app.route('/api/top-customers', methods=['GET'])
+def get_top_customers():
+
+    agent_email = session.get('user_id')
+    if not agent_email:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Top 5 customers by tickets purchased
+    cursor.execute("""
+        SELECT c.email, c.name, COUNT(*) AS tickets_purchased
+        FROM customer c
+        JOIN purchase p ON c.email = p.customer_email
+        WHERE p.agent_email = %s
+        GROUP BY c.email
+        ORDER BY tickets_purchased DESC
+        LIMIT 5
+    """, (agent_email,))
+    top_tickets = cursor.fetchall()
+
+    # Top 5 customers by commission earned
+    cursor.execute("""
+        SELECT c.email, c.name, SUM(f.price * b.comission) AS commission_earned
+        FROM customer c
+        JOIN purchase p ON c.email = p.customer_email
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.flight_num = f.flight_num
+        JOIN booking_agent b ON p.agent_email = b.email
+        WHERE p.agent_email = %s
+    """, (agent_email,))
+    top_commissions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    
+    print(top_tickets)
+    print(top_commissions)
+
+    return jsonify({
+        'top_tickets': top_tickets,
+        'top_commissions': top_commissions
+    })
+
 """Choose home page
 
 Keyword arguments:
