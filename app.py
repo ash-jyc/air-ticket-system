@@ -28,7 +28,7 @@ def search_flights():
     return render_template('search-flights.html')
 
 # Search flights
-@app.route('/search-flights', methods=['POST'])
+@app.route('/api-search-flights', methods=['POST'])
 def search_flights_form():
     # Connect to the database
     conn = get_db_connection()
@@ -96,7 +96,7 @@ def book_flight():
 def flight_status():
     return render_template('flight-status.html')
 
-@app.route('/flight-status', methods=['POST'])
+@app.route('/api-flight-status', methods=['POST'])
 def flight_status_form():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -250,6 +250,10 @@ def login():
 # View user's flights
 @app.route('/my-flights')
 def my_flights():
+    return render_template('my-flights.html')
+
+@app.route('/api-my-flights', methods=['GET'])
+def my_flights_form():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
@@ -259,16 +263,17 @@ def my_flights():
     
     flights = []
     query = """
-        SELECT f.flight_number, f.status, f.depart_time, f.arrive_time
+        SELECT f.flight_num, f.status, f.depart_time, f.arrive_time
         FROM flight f
-        JOIN ticket t ON f.flight_number = t.flight_number
-        WHERE t.user_id = %s
+        JOIN ticket t ON f.flight_num = t.flight_num
+        WHERE t.ticket_id = %s
     """
     
     cursor.execute(query, (user_id,))
     flights = cursor.fetchall()
+    print("flights", flights)
     
-    return render_template('my-flights.html', flights=flights)
+    return jsonify(flights)
 
 @app.route('/home')
 def user_home():
