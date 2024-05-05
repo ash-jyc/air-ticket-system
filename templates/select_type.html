@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Please Select Your Registration Type</title>
+    <link rel="stylesheet" href="/static/css/Register_style.css">
+</head>
+<body>
+    <form class="registration-form">
+        <h1>Please Select Your Registration Type</h1>
+        <select name="type">
+            <option value="Customer">Customer</option>
+            <option value="BookingAgent">Booking Agent</option>
+            <option value="AirlineStaff">Airline Staff</option>
+        </select>
+        <div class="button-container">
+            <button type="submit" formaction="/register">Register</button>
+            <button type="submit" formaction="/login">Log In</button>
+        </div>
+    </form>
+</body>
+</html>

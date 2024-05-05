@@ -7,9 +7,6 @@
 </head>
 <body>
     <header>
-        <nav>
-            <a href="{{ url_for('my_flights') }}">My Flights</a>
-        </nav>
         <button onclick="location.href='{{ url_for('search_flights') }}'">Search Flights</button>
         <button onclick="location.href='{{ url_for('flight_status') }}'">Check Flight Status</button>
     </header>

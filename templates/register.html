@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Please Register</title>
+    <link rel="stylesheet" href="/static/css/Register_style.css">
+</head>
+<body>
+    <!-- 显示错误信息 -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form action="/register" method="post">
+        <input type="hidden" name="type" value="{{ type }}">
+        <!-- 根据用户类型显示不同的字段 -->
+        {% if type == 'Customer' %}
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" value="{{ form_data.email if form_data else '' }}" required><br>
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{ form_data.name if form_data else '' }}" required><br>
+
+            <label for="building_number">Building Number:</label>
+            <input type="text" name="building_number" id="building_number" value="{{ form_data.building_number if form_data else '' }}" required><br>
+
+            <label for="street">Street:</label>
+            <input type="text" name="street" id="street" value="{{ form_data.street if form_data else '' }}" required><br>
+
+            <label for="city">City:</label>
+            <input type="text" name="city" id="city" value="{{ form_data.city if form_data else '' }}" required><br>
+
+            <label for="state">State:</label>
+            <input type="text" name="state" id="state" value="{{ form_data.state if form_data else '' }}" required><br>
+
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" name="phone_number" id="phone_number" value="{{ form_data.phone_number if form_data else '' }}" required><br>
+
+            <label for="passport_number">Passport Number:</label>
+            <input type="text" name="passport_number" id="passport_number" value="{{ form_data.passport_number if form_data else '' }}" required><br>
+
+            <label for="passport_expiration">Passport Expiration:</label>
+            <input type="date" name="passport_expiration" id="passport_expiration" value="{{ form_data.passport_expiration if form_data else '' }}" required><br>
+
+            <label for="passport_country">Nationality:</label>
+            <input type="text" name="passport_country" id="passport_country" value="{{ form_data.passport_country if form_data else '' }}" required><br>
+
+            <label for="date_of_birth">Date of Birth:</label>
+            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ form_data.date_of_birth if form_data else '' }}" required><br>
+
+        {% elif type == 'BookingAgent' %}
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" value="{{ form_data.email if form_data else '' }}" required><br>
+
+            <label for="booking_agent_id">Agent ID:</label>
+            <input type="text" name="booking_agent_id" id="booking_agent_id" value="{{ form_data.booking_agent_id if form_data else '' }}" required><br>
+
+        {% elif type == 'AirlineStaff' %}
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" value="{{ form_data.username if form_data else '' }}" required><br>
+
+            <label for="first_name">First Name:</label>
+            <input type="text" name="first_name" id="first_name" value="{{ form_data.first_name if form_data else '' }}" required><br>
+
+            <label for="last_name">Last Name:</label>
+            <input type="text" name="last_name" id="last_name" value="{{ form_data.last_name if form_data else '' }}" required><br>
+
+            <label for="date_of_birth">Date of Birth:</label>
+            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ form_data.date_of_birth if form_data else '' }}" required><br>
+
+            <label for="name_airline">Airline Name:</label>
+            <input type="text" name="name_airline" id="name_airline" value="{{ form_data.name_airline if form_data else '' }}" required><br>
+        {% endif %}
+
+        <!-- 共用字段 -->
+        <label for="password">Password:</label>
+        <input type="password" name="password" id="password" required><br>
+        <button type="submit">Sign Up</button>
+    </form>
+</body>
+</html>
