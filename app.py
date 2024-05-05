@@ -18,11 +18,6 @@ def get_db_connection():
     conn = mysql.connect(**db_config)
     return conn
 
-# # Home page route
-# @app.route('/')
-# def home():
-#     return render_template('search-flights.html')
-
 @app.route('/search-flights')
 def search_flights():
     return render_template('search-flights.html')
@@ -172,9 +167,9 @@ def flight_status_form():
     return jsonify(flight_details)
 
 # Here is for register selection choose your type
-@app.route('/select_type')
+@app.route('/select-type')
 def select_type():
-    return render_template('select_type.html')
+    return render_template('select-type.html')
 
 #Registration
 @app.route('/register', methods=['GET', 'POST'])
@@ -275,29 +270,49 @@ def register():
 
         return redirect(url_for('home'))
 
-########################login------------------------------------------
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
+    if request.method == 'GET':
+        user_type = request.args.get('type', 'Customer')  # 默认为 Customer，如果没有提供类型
+        return render_template('login.html', type=user_type)
+    elif request.method == 'POST':
+        user_type = request.form['type']
         password = request.form['password']
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM person WHERE username = %s", (username,))
-        user = cursor.fetchone()
+
+        # 根据用户类型选择正确的数据库表，并查询
+        if user_type == 'AirlineStaff':
+            username = request.form['username']
+            cursor.execute("SELECT * FROM airline_staff WHERE username = %s", (username,))
+            user = cursor.fetchone()
+            user_key = 'username'  # 主键是 username
+        else:
+            email = request.form['email']
+            table = 'booking_agent' if user_type == 'BookingAgent' else 'customer'
+            cursor.execute(f"SELECT * FROM {table} WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            user_key = 'email'  # 主键是 email
+
         cursor.close()
         conn.close()
 
+        # 检查用户是否存在且密码是否正确
         if user and bcrypt.check_password_hash(user['password'], password):
-            session['username'] = username
-            session['user_type'] = user['user_type']
-            return redirect(url_for('user_home'))
+            session['user_id'] = user[user_key]  # 使用数据库中的主键作为用户ID
+            session['user_type'] = user_type
+
+            # 根据用户类型重定向到不同的主页
+            home_page = {
+                'Customer': 'customer-home',
+                'BookingAgent': 'agent-home',
+                'AirlineStaff': 'staff-home'
+            }.get(user_type, 'home')
+
+            return redirect(url_for(home_page))
         else:
-            flash('Login Unsuccessful. Please check username and password')
-            return redirect(url_for('login'))
-
-    return render_template('login.html')
-
+            flash('Login unsuccessful. Please check username and password.')
+            return render_template('login.html', type=user_type)
 # View user's flights
 @app.route('/api/my-flights', methods=['GET'])
 def my_flights_form():
@@ -325,24 +340,17 @@ def my_flights_form():
     
     return jsonify(flights)
 
-@app.route('/home')
-def user_home():
-    print(session)
-    session['user_type'] = 'BookingAgent'
-    session['username'] = 'test2'
-    session['user_id'] = 1
-    if 'username' in session:
-        user_type = session.get('user_type')
-        if user_type == 'Customer':
-            return render_template('customer-home.html', username=session['username'])
-        elif user_type == 'BookingAgent':
-            return render_template('agent-home.html', username=session['username'])
-        elif user_type == 'AirlineStaff':
-            return render_template('staff_home.html', username=session['username'])
-        else:
-            return 'User type is unknown.'
-    else:
-        return redirect(url_for('login'))
+@app.route('/customer-home')
+def customer_home():
+    if 'user_type' in session and session['user_type'] == 'Customer':
+        return render_template('customer-home.html')
+    return redirect(url_for('login', type='Customer'))
+
+@app.route('/agent-home')
+def bookingagent_home():
+    if 'user_type' in session and session['user_type'] == 'BookingAgent':
+        return render_template('agent-home.html')
+    return redirect(url_for('login', type='BookingAgent'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='127.0.0.1')
