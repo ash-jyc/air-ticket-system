@@ -439,6 +439,36 @@ def track_spending():
     
     return jsonify(formatted_data)
 
+@app.route('/api/track-commission', methods=['POST'])
+def track_commission_form():
+    
+    print(request.form)
+    agent_email = session.get('user_id')
+    start_date = request.get_json()['start_date']
+    end_date = request.get_json()['end_date']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # commission should be commission * price of tickets sold
+    query = """
+        SELECT SUM(b.comission * f.price) AS total_commission, COUNT(*) AS total_tickets
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        JOIN booking_agent b ON p.agent_email = b.email
+        WHERE p.agent_email = %s AND p.date >= %s AND p.date <= %s
+    """
+    
+    cursor.execute(query, (agent_email, start_date, end_date))
+    commission = cursor.fetchone() or {'total_commission': 0, 'total_tickets': 0}
+    
+    cursor.close()
+    conn.close()
+    print(commission)
+    
+    return jsonify(commission)
+
 """Choose home page
 
 Keyword arguments:
