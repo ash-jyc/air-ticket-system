@@ -10,7 +10,6 @@ db_config = {
     'user': 'root',
     'password': '',
     'host': 'localhost',
-    'port': 3307,
     'database': 'airline',
     'raise_on_warnings': True
 }
@@ -19,10 +18,10 @@ def get_db_connection():
     conn = mysql.connect(**db_config)
     return conn
 
-# Home page route
-@app.route('/')
-def home():
-    return render_template('search-flights.html')
+# # Home page route
+# @app.route('/')
+# def home():
+#     return render_template('search-flights.html')
 
 @app.route('/search-flights')
 def search_flights():
@@ -251,7 +250,5 @@ def user_home():
     else:
         return redirect(url_for('login'))
 
-if __name__ == '__main__':
-    app.run(debug=True)
 if __name__ == '__main__':
     app.run(debug=True)
