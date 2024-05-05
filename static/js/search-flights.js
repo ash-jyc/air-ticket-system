@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Send POST request to the server with the form data
-        fetch('/search-flights', {
+        fetch('/api-search-flights', {
             method: 'POST',
             body: searchParams,
             headers: {
