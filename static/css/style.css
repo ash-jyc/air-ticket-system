@@ -91,8 +91,8 @@ li {
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 300px;
+    width: 100%;
+    max-width: 350px;
     height: 700px;
     overflow-y: auto;
 }
@@ -100,13 +100,13 @@ li {
 /* flight styles */
 #flights-container {
     width: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    /* background: rgba(0, 0, 0, 0.9); */
     padding: 5px;
     margin: 5px 0;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background-color: #fff;
-    color: #333;
+    background-color: rgba(254, 178, 242, 0.4);
+    color: #ffffff;
     font-size: 16px;
     height: 500px;
     overflow-y: auto;
