@@ -85,7 +85,12 @@ function bookFlight(flightNumber) {
         if (data.redirect) {
             window.location.href = data.redirect + '?flight_number=' + flightNumber;
         } else {
-            alert(data.message);
+            if (data.error) {
+                console.error('Error booking the flight:', data.error);
+                alert("Booking agent does not work for this airline. Please try again.")
+            } else {
+                alert(data.message);
+            }
         }
     })
     .catch(error => {

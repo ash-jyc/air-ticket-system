@@ -106,7 +106,35 @@ def book_flight():
         
     elif user_type == "BookingAgent":
         print("user_type", user_type)
-        return jsonify({'redirect': '/book-with-agent', 'flight_number': request.get_json()['flight_number']})
+        # check booking agent works for airline
+        agent_email = session.get('user_id')
+        flight_number = request.get_json()['flight_number']
+        
+        # get airline name
+        query = """
+            SELECT f.name_airline
+            FROM flight f
+            WHERE f.flight_num = %s
+        """
+        
+        cursor.execute(query, (flight_number,))
+        airline_name = cursor.fetchone()['name_airline']
+        print(airline_name)
+        
+        query = """
+            SELECT b.booking_agent_id
+            FROM booking_agent b
+            JOIN works_for w ON b.email = w.agent_email
+            WHERE b.email = %s AND w.airline_name = %s
+        """
+        
+        cursor.execute(query, (agent_email, airline_name))
+        booking_agent_id = cursor.fetchone()
+        print(booking_agent_id)
+        if not booking_agent_id:
+            return jsonify({'error': 'Booking agent does not work for airline'})
+                
+        return jsonify({'redirect': '/book-with-agent', 'flight_number': flight_number})
     
     conn.commit()
     cursor.close()
