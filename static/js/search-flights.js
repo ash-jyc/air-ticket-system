@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function bookFlight(flightNumber) {
-    fetch('/book-flight', {
+    fetch('/api/book-flight', {
         method: 'POST',
         body: JSON.stringify({ flight_number: flightNumber }),
         headers: {
