@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Change Flight Status</title>
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Flash messages display area -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h1>Change Flight Status</h1>
+        <form action="{{ url_for('change_flight_status') }}" method="post">
+            <div class="form-group">
+                <label for="flight_num">Select Flight:</label>
+                <select id="flight_num" name="flight_num" class="form-control">
+                    {% for flight in flights %}
+                    <option value="{{ flight.flight_num }}">{{ flight.flight_num }} - Current Status: {{ flight.status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="status">New Status:</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="Upcoming">Upcoming</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Status</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

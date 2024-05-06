@@ -7,17 +7,32 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <form class="registration-form">
+    <form class="registration-form" id="registrationForm">
         <h1>Please Select Your Registration Type</h1>
-        <select name="type">
+        <select name="type" id="typeSelect" onchange="updateButtonStatus()">
             <option value="Customer">Customer</option>
             <option value="BookingAgent">Booking Agent</option>
             <option value="AirlineStaff">Airline Staff</option>
         </select>
         <div class="button-container">
-            <button type="submit" formaction="/register">Register</button>
+            <button type="submit" formaction="/register" id="registerButton">Register</button>
             <button type="submit" formaction="/login">Log In</button>
         </div>
     </form>
+
+    <script>
+        function updateButtonStatus() {
+            var select = document.getElementById('typeSelect');
+            var button = document.getElementById('registerButton');
+            if (select.value === 'AirlineStaff') {
+                button.disabled = true;
+            } else {
+                button.disabled = false;
+            }
+        }
+
+        // Call the function on page load to set the correct initial state
+        document.addEventListener('DOMContentLoaded', updateButtonStatus);
+    </script>
 </body>
 </html>

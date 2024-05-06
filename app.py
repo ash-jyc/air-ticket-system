@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify, flash
 from flask_bcrypt import Bcrypt
 import mysql.connector as mysql
+from datetime import datetime, timedelta
 
 ### SETUP ###
 app = Flask(__name__)
@@ -34,10 +35,17 @@ def select_type():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
-        # 从 select type 里取得
-        user_type = request.args.get('type')
-        # 根据用户类型渲染注册表单
-        return render_template('register.html', type=user_type)
+        user_type = request.args.get('type', 'Customer')  # Default to Customer if not specified
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM airline")
+        airlines = cursor.fetchall()
+        #print(airlines)  # Check what is being returned from the database
+        cursor.close()
+        conn.close()
+        airlines = [{'name': airline[0]} for airline in airlines]
+        # Render the registration form with the list of airlines
+        return render_template('register.html', type=user_type, airlines=airlines)
     elif request.method == 'POST':
         # 从表单数据中获取注册信息
         user_type = request.form['type']
@@ -109,12 +117,28 @@ def register():
                 last_name = request.form['last_name']
                 date_of_birth = request.form['date_of_birth']
                 name_airline = request.form['name_airline']
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO airline_staff (username, password, first_name, last_name, date_of_birth, name_airline) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (username, hashed_password, first_name, last_name, date_of_birth, name_airline)
-                )
+                try:
+
+                    # Insert new airline staff into the database
+                    cursor.execute(
+                        "INSERT INTO airline_staff (username, password, first_name, last_name, date_of_birth, name_airline) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (username, hashed_password, first_name, last_name, date_of_birth, name_airline)
+                    )
+                    # Default permission_id for new staff is 1 (where is_operator and is_admin are both set to 0)
+                    cursor.execute(
+                        "INSERT INTO have_permission (username, permission_id) VALUES (%s, %s)",
+                        (username, 1)
+                    )
+
+                    # Commit the transaction
+                    conn.commit()
+                except Exception as e:
+                    # Rollback in case of error
+                    conn.rollback()
+
+                    flash(f'An error occurred: {str(e)}')
+
+                    return render_template('register.html', type=user_type, form_data=request.form)
             # 提交数据库事务
             conn.commit()
         except Exception as e:
@@ -167,7 +191,7 @@ def login():
             home_page = {
                 'Customer': 'customer_home',
                 'BookingAgent': 'agent_home',
-                'AirlineStaff': 'staff_home'
+                'AirlineStaff': 'airlinestaff_home'
             }.get(user_type, 'home')
 
             return redirect(url_for(home_page))
@@ -191,7 +215,7 @@ def home():
     elif user_type == 'BookingAgent':
         return redirect(url_for('agent_home'))
     else:
-        return redirect(url_for('staff_home'))
+        return redirect(url_for('airlinestaff_home'))
 
 ### PUBLIC ROUTES ###
 ## Search flights
@@ -551,12 +575,457 @@ def booked_flights():
 
 ### STAFF ROUTES ###
 ## STAFF - home
-@app.route('/staff-home')
-def staff_home():
-    if 'user_type' in session and session['user_type'] == 'AirlineStaff':
-        return render_template('staff-home.html')
-    return redirect(url_for('login', type='AirlineStaff'))
+# @app.route('/staff-home')
+# def staff_home():
+#     if 'user_type' in session and session['user_type'] == 'AirlineStaff':
+#         return render_template('staff-home.html')
+#     return redirect(url_for('login', type='AirlineStaff'))
 
+#===================Airline Staff，绝妙是不仅在homepage把不属于你权限的botton unavailable了
+# ，为了防止你直接跳过这个输入网址进入后面的功能，我还对每个功能的page做了warning
+
+def user_has_admin_permission(username):
+    """这个验证是否具有admin权限"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 查找用户的权限ID
+    cursor.execute("SELECT permission_id FROM have_permission WHERE username = %s", (username,))
+    permission_id = cursor.fetchone()
+
+    if permission_id:
+        # 检查权限ID是否对应于Admin
+        cursor.execute("SELECT is_admin FROM permission WHERE permission_id = %s", (permission_id[0],))
+        is_admin = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return is_admin[0] == 1
+
+    cursor.close()
+    conn.close()
+    return False
+
+def user_has_operator_permission(username):
+    """这个验证是否具有operate权限"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 查找用户的权限ID
+    cursor.execute("SELECT permission_id FROM have_permission WHERE username = %s", (username,))
+    permission_id = cursor.fetchone()
+
+    if permission_id:
+        # 检查权限ID是否对应operator
+        cursor.execute("SELECT is_operator FROM permission WHERE permission_id = %s", (permission_id[0],))
+        is_operator = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return is_operator[0] == 1
+
+    cursor.close()
+    conn.close()
+    return False
+
+@app.route('/show_message_before_redirect')
+def show_message_before_redirect():
+    return render_template('message_before_redirect.html')
+
+#==================任务1 and homepage
+@app.route('/airlinestaff_home', methods=['GET', 'POST'])
+def airlinestaff_home():
+
+    if 'user_type' in session and session['user_type'] == 'AirlineStaff':
+        if request.method == 'POST' and request.form.get('logout_button'):
+            logout()  # 调用注销函数执行注销操作
+
+
+        username = session['user_id']
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        can_create_flight = user_has_admin_permission(username)
+        can_add_airplane = user_has_admin_permission(username)
+        can_add_airport = user_has_admin_permission(username)
+        can_grant_permissions = user_has_admin_permission(username)
+        can_add_booking_agent = user_has_admin_permission(username)
+        can_change_status = user_has_operator_permission(username)
+
+        # 提供默认日期或从表单接收
+        start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
+        end_date = request.args.get('end_date', (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
+        source_airport = request.args.get('source_airport', '%')
+        destination_airport = request.args.get('destination_airport', '%')
+
+        # SQL 查询以获取航班信息
+        cursor.execute("""
+            SELECT f.flight_num, f.depart_time, f.arrive_time, f.depart_airport, f.arrive_airport, f.status
+            FROM flight f
+            JOIN airline_staff s ON f.name_airline = s.name_airline
+            WHERE s.username = %s AND 
+                  f.depart_time BETWEEN %s AND %s AND 
+                  f.depart_airport LIKE %s AND 
+                  f.arrive_airport LIKE %s
+            ORDER BY f.depart_time
+        """, (username, start_date, end_date, source_airport, destination_airport))
+        flights = cursor.fetchall()
+
+        # 检查是否请求查看特定航班的乘客
+        flight_num = request.args.get('flight_num')
+        customers = []
+        if flight_num:
+            cursor.execute("""
+                SELECT p.customer_email, p.ticket_id
+                FROM purchase p
+                JOIN ticket t ON p.ticket_id = t.ticket_id
+                WHERE t.flight_num = %s
+            """, (flight_num,))
+            customers = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return render_template('airline_staff_home.html', flights=flights, customers=customers,
+                               can_create_flight=can_create_flight, can_add_airplane=can_add_airplane,
+                               can_add_airport=can_add_airport, can_grant_permissions=can_grant_permissions,
+                               can_add_booking_agent=can_add_booking_agent, can_change_status=can_change_status,
+                               selected_flight=flight_num, start_date=start_date, end_date=end_date,
+                               source_airport=source_airport, destination_airport=destination_airport)
+    else:
+        return redirect(url_for('login', type='AirlineStaff'))
+
+
+
+#这里开始任务2
+
+@app.route('/airlinestaff_home/create_flight', methods=['GET', 'POST'])
+def create_flight():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+
+    username = session['user_id']
+    if not user_has_admin_permission(username):
+        flash("You do not have the necessary permissions to perform this action.", 'error')
+        return redirect(url_for('airlinestaff_home'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Fetch the airline name for the logged-in user
+        cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (username,))
+        user_airline = cursor.fetchone()['name_airline']
+
+        if request.method == 'GET':
+            # Fetch airports data
+            cursor.execute("SELECT name FROM airport")
+            airports = cursor.fetchall()
+            # Fetch airplanes only from the user's airline
+            cursor.execute("SELECT id, name_airline FROM airplane WHERE name_airline = %s", (user_airline,))
+            airplanes = cursor.fetchall()
+            # Fetch statuses for dropdown
+            cursor.execute("SELECT DISTINCT status FROM flight")
+            statuses = cursor.fetchall()
+
+            return render_template('create_flight.html', user_airline=user_airline, airports=airports, airplanes=airplanes, statuses=statuses)
+
+        elif request.method == 'POST':
+            flight_num = request.form['flight_num']
+            depart_time = request.form['depart_time']
+            arrive_time = request.form['arrive_time']
+            depart_airport = request.form['depart_airport']
+            arrive_airport = request.form['arrive_airport']
+            plane_id = request.form['plane_id']
+            price = request.form['price']
+            status = request.form['status']
+
+            # Fetch the airline owning the airplane
+            cursor.execute("SELECT name_airline FROM airplane WHERE id = %s", (plane_id,))
+            name_airplane_airline = cursor.fetchone()['name_airline']
+
+            # Insert the new flight, using the user's airline for the airline operating the flight
+            cursor.execute("""
+                INSERT INTO flight (flight_num, name_airline, depart_time, arrive_time, depart_airport, arrive_airport, plane_id, name_airplane_airline, price, status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (flight_num, user_airline, depart_time, arrive_time, depart_airport, arrive_airport, plane_id, name_airplane_airline, price, status))
+            conn.commit()
+            flash("Flight created successfully!", 'success')
+            return redirect(url_for('show_message_before_redirect'))
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+#=========================================================
+
+#============================任务3
+@app.route('/airlinestaff_home/change_flight_status', methods=['GET', 'POST'])
+def change_flight_status():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+
+    username = session['user_id']
+    if not user_has_operator_permission(username):
+        flash("You do not have the necessary permissions to perform this action.", 'error')
+        return redirect(url_for('show_message_before_redirect'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Fetch the airline name for the logged-in user
+        cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (username,))
+        user_airline = cursor.fetchone()['name_airline']
+
+        if request.method == 'GET':
+            # Fetch only the flights of the user's airline
+            cursor.execute("SELECT flight_num, status FROM flight WHERE name_airline = %s", (user_airline,))
+            flights = cursor.fetchall()
+            return render_template('change_flight_status.html', flights=flights)
+
+        elif request.method == 'POST':
+            flight_num = request.form['flight_num']
+            new_status = request.form['status']
+
+            # Verify that the flight to update is from the user's airline before updating
+            cursor.execute("SELECT name_airline FROM flight WHERE flight_num = %s", (flight_num,))
+            flight = cursor.fetchone()
+            if flight and flight['name_airline'] == user_airline:
+                cursor.execute("UPDATE flight SET status = %s WHERE flight_num = %s", (new_status, flight_num))
+                conn.commit()
+                flash("Flight status updated successfully!", 'success')
+            else:
+                flash("You can only update flights from your own airline.", 'error')
+
+            return redirect(url_for('show_message_before_redirect'))
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+#+==================================任务4
+from flask import flash, redirect, url_for, render_template, request
+
+@app.route('/airlinestaff_home/add_airplane', methods=['GET', 'POST'])
+def add_airplane():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+
+    username = session['user_id']
+    if not user_has_admin_permission(username):
+        flash("You do not have the necessary permissions to perform this action.", 'error')
+        return redirect(url_for('show_message_before_redirect'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (username,))
+        user_airline = cursor.fetchone()['name_airline']
+
+        if request.method == 'GET':
+            return render_template('add_airplane.html', user_airline=user_airline)
+
+        elif request.method == 'POST':
+            airplane_id = request.form['airplane_id']
+
+            # Check if airplane ID already exists in the database
+            cursor.execute("SELECT id FROM airplane WHERE id = %s", (airplane_id,))
+            if cursor.fetchone():
+                flash("This airplane ID already exists!", 'error')
+                return render_template('add_airplane.html', user_airline=user_airline)
+
+            cursor.execute("INSERT INTO airplane (id, name_airline) VALUES (%s, %s)", (airplane_id, user_airline))
+            conn.commit()
+            flash("Airplane added successfully!", 'success')
+            return redirect(url_for('confirm_airplanes', user_airline=user_airline))
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+@app.route('/airlinestaff_home/confirm_airplanes')
+def confirm_airplanes():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+
+    username = session['user_id']
+    if not user_has_admin_permission(username):
+        flash("You do not have the necessary permissions to perform this action.", 'error')
+        return redirect(url_for('show_message_before_redirect'))
+
+    user_airline = request.args.get('user_airline')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id, name_airline FROM airplane WHERE name_airline = %s", (user_airline,))
+        airplanes = cursor.fetchall()
+        return render_template('confirm_airplanes.html', airplanes=airplanes, user_airline=user_airline)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+@app.route('/airlinestaff_home/add_airport', methods=['GET', 'POST'])
+def add_airport():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+    username = session['user_id']
+
+    if not user_has_admin_permission(username):
+        error_message = "You do not have the necessary permissions to perform this action."
+        return render_template('show_message_before_redirect.html', error_message=error_message)
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        if request.method == 'GET':
+            # Render empty form for adding a new airport
+            return render_template('add_airport.html', error_message=None)
+
+        elif request.method == 'POST':
+            airport_name = request.form['airport_name']
+            city = request.form['city']
+
+            # Check if the airport already exists
+            cursor.execute("SELECT name FROM airport WHERE name = %s", (airport_name,))
+            if cursor.fetchone():
+                error_message = "An airport with this name already exists!"
+                return render_template('add_airport.html', error_message=error_message)
+
+            # Insert the new airport
+            cursor.execute("INSERT INTO airport (name, city) VALUES (%s, %s)", (airport_name, city))
+            conn.commit()
+            flash("Airport added successfully!", 'success')
+            return redirect(url_for('show_message_before_redirect'))
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/airlinestaff_home/view_booking_agents')
+def view_booking_agents():
+    return redirect(url_for('view_top_agents'))
+
+@app.route('/airlinestaff_home/view_frequent_customers')
+def view_frequent_customers():
+    return redirect(url_for('view_top_customers'))
+
+@app.route('/airlinestaff_home/revenue_comparison')
+def revenue_comparison():
+    return redirect(url_for('view_reports'))
+
+@app.route('/airlinestaff_home/view_top_destinations')
+def view_top_destinations():
+    return render_template('view_top_destinations.html')
+
+
+@app.route('/airlinestaff_home/grant_permissions', methods=['GET', 'POST'])
+def grant_permissions():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        return redirect(url_for('login', type='AirlineStaff'))
+    username = session['user_id']
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (username,))
+        user_airline = cursor.fetchone()['name_airline']
+
+        if not user_has_admin_permission(username):
+            flash("You do not have the necessary permissions to perform this action.", 'error')
+            return redirect(url_for('show_message_before_redirect'))
+
+        if request.method == 'GET':
+            cursor.execute("""
+                SELECT username, first_name, last_name 
+                FROM airline_staff 
+                WHERE name_airline = %s AND username <> %s
+            """, (user_airline, username))
+            staff_members = cursor.fetchall()
+
+            cursor.execute("SELECT permission_id, is_operator, is_admin FROM permission")
+            permissions = cursor.fetchall()
+
+            return render_template('grant_permission.html', staff_members=staff_members, permissions=permissions,
+                                   user_airline=user_airline)
+
+        elif request.method == 'POST':
+            selected_staff = request.form['selected_staff']
+            new_permission_id = request.form['new_permission_id']
+
+            cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (selected_staff,))
+            staff_airline = cursor.fetchone()
+            if staff_airline['name_airline'] != user_airline:
+                flash("Operation failed. You can only modify permissions for staff in your own airline.", 'error')
+                return redirect(url_for('show_message_before_redirect'))
+
+            cursor.execute("""
+                UPDATE have_permission 
+                SET permission_id = %s 
+                WHERE username = %s
+            """, (new_permission_id, selected_staff))
+            conn.commit()
+            flash("Permissions updated successfully!", 'success')
+            return redirect(url_for('show_message_before_redirect'))
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/airlinestaff_home/add_booking_agent', methods=['GET', 'POST'])
+def add_booking_agent():
+    if 'user_type' not in session or session['user_type'] != 'AirlineStaff':
+        # Redirect if not logged in or not an airline staff
+        return redirect(url_for('login', type='AirlineStaff'))
+
+    username = session['user_id']
+
+    # Verify if the logged-in staff has admin permissions
+    if not user_has_admin_permission(username):
+        flash("You do not have the necessary permissions to perform this action.", 'error')
+        return redirect(url_for('show_message_before_redirect'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Fetch the airline name for the logged-in user
+        cursor.execute("SELECT name_airline FROM airline_staff WHERE username = %s", (username,))
+        user_airline = cursor.fetchone()['name_airline']
+
+        if request.method == 'POST':
+            agent_email = request.form['agent_email']
+
+            # Insert into works_for table if the agent exists in the booking_agent table
+            cursor.execute("SELECT * FROM booking_agent WHERE email = %s", (agent_email,))
+            if cursor.fetchone():
+                cursor.execute("INSERT INTO works_for (agent_email, airline_name) VALUES (%s, %s)",
+                               (agent_email, user_airline))
+                conn.commit()
+                flash("Booking agent added successfully!", 'success')
+            else:
+                flash("No such agent exists.", 'error')
+
+            return redirect(url_for('show_message_before_redirect'))
+
+        return render_template('add_booking_agent.html', user_airline=user_airline)
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+### STAFF - home page view
 ## STAFF - view flights
 @app.route('/api/staff-flights', methods=['GET', 'POST'])
 def staff_flights():

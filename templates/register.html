@@ -76,7 +76,11 @@
             <input type="date" name="date_of_birth" id="date_of_birth" value="{{ form_data.date_of_birth if form_data else '' }}" required><br>
 
             <label for="name_airline">Airline Name:</label>
-            <input type="text" name="name_airline" id="name_airline" value="{{ form_data.name_airline if form_data else '' }}" required><br>
+            <select id="name_airline" name="name_airline" required>
+                {% for airline in airlines %}
+                <option value="{{ airline.name }}">{{ airline.name }}</option>
+                {% endfor %}
+            </select>
         {% endif %}
 
         <!-- 共用字段 -->

@@ -1,0 +1,55 @@
+body {
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+.header {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.footer {
+    padding-top: 20px;
+}
+
+table {
+    margin-top: 20px;
+}
+
+th,
+td {
+    text-align: center;
+}
+
+.form-control {
+    margin-bottom: 10px;
+}
+
+.btn-primary,
+.btn-success,
+.btn-secondary {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.btn {
+    border-radius: 0.25rem;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.btn:hover {
+    filter: brightness(90%);
+}
+
+.feature-section h2 {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}

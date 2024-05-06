@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Airport</title>
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+
+</head>
+<body>
+    <div class="container">
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">{{ error_message }}</div>
+        {% endif %}
+        <h1>Add New Airport</h1>
+        <form action="{{ url_for('add_airport') }}" method="post">
+            <div class="form-group">
+                <label for="airport_name">Airport Name:</label>
+                <input type="text" class="form-control" id="airport_name" name="airport_name" required>
+            </div>
+            <div class="form-group">
+                <label for="city">City:</label>
+                <input type="text" class="form-control" id="city" name="city" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Airport</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

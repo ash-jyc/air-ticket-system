@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+    <title>Airplanes for {{ user_airline }}</title>
+    <title>Add Airplane to {{ user_airline }}</title>
+</head>
+<body>
+    <div class="container mt-3">
+        <h1>Airplanes in {{ user_airline }}</h1>
+        <ul>
+            {% for airplane in airplanes %}
+                <li>ID: {{ airplane.id }} - Airline: {{ airplane.name_airline }}</li>
+            {% endfor %}
+        </ul>
+        <!-- Button to return to the staff home page -->
+        <a href="{{ url_for('airlinestaff_home') }}" class="btn btn-primary mt-3">Return to Staff Home</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

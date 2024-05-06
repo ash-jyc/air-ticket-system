@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+    <title>Add Airplane to {{ user_airline }}</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form action="{{ url_for('add_airplane') }}" method="POST">
+        <label for="airplane_id">Airplane ID:</label>
+        <input type="text" id="airplane_id" name="airplane_id" required>
+        <button type="submit">Add Airplane</button>
+    </form>
+</body>
+</html>

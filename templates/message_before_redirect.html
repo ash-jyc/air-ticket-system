@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="5;url={{ url_for('airlinestaff_home') }}">
+    <title>Message</title>
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+</head>
+<body>
+    <div class="container mt-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    Redirecting, please wait...
+                </div>
+            {% endif %}
+        {% endwith %}
+        <p>You will be redirected in 5 seconds. If not, <a href="{{ url_for('airlinestaff_home') }}">click here</a>.</p>
+    </div>
+</body>
+</html>

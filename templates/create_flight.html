@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Flight</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create New Flight for {{ user_airline }}</h1>
+        <form action="{{ url_for('create_flight') }}" method="post">
+            <div class="form-group">
+                <label for="flight_num">Flight Number:</label>
+                <input type="text" class="form-control" id="flight_num" name="flight_num" required>
+            </div>
+            <input type="hidden" name="name_airline" value="{{ user_airline }}">
+            <div class="form-group">
+                <label for="plane_id">Airplane ID:</label>
+                <select class="form-control" id="plane_id" name="plane_id" onchange="updateAirplaneOwner()" required>
+                    {% for airplane in airplanes %}
+                    <option value="{{ airplane.id }}" data-airline="{{ airplane.name_airline }}">{{ airplane.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="name_airplane_airline">Airplane's Owning Airline:</label>
+                <input type="text" class="form-control" id="name_airplane_airline" name="name_airplane_airline" readonly>
+            </div>
+            <div class="form-group">
+                <label for="depart_airport">Departure Airport:</label>
+                <select class="form-control" id="depart_airport" name="depart_airport" required>
+                    {% for airport in airports %}
+                    <option value="{{ airport.name }}">{{ airport.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="arrive_airport">Arrival Airport:</label>
+                <select class="form-control" id="arrive_airport" name="arrive_airport" required>
+                    {% for airport in airports %}
+                    <option value="{{ airport.name }}">{{ airport.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="depart_time">Departure Time:</label>
+                <input type="datetime-local" class="form-control" id="depart_time" name="depart_time" required>
+            </div>
+            <div class="form-group">
+                <label for="arrive_time">Arrival Time:</label>
+                <input type="datetime-local" class="form-control" id="arrive_time" name="arrive_time" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select class="form-control" id="status" name="status" required>
+                    <option value="Upcoming">Upcoming</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="price">Price:</label>
+                <input type="number" class="form-control" id="price" name="price" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Flight</button>
+        </form>
+    </div>
+    <script>
+        function updateAirplaneOwner() {
+            var select = document.getElementById('plane_id');
+            var airline = select.options[select.selectedIndex].getAttribute('data-airline');
+            document.getElementById('name_airplane_airline').value = airline;
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

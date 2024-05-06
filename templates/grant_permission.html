@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grant Permissions</title>
+    <link rel="stylesheet" href="/static/css/nyustyle.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Grant Permissions</h1>
+        <form action="{{ url_for('grant_permissions') }}" method="POST">
+            <div class="mb-3">
+                <label for="selected_staff" class="form-label">Select Staff Member:</label>
+                <select class="form-select" name="selected_staff" id="selected_staff">
+                    {% for staff in staff_members %}
+                    <option value="{{ staff.username }}">{{ staff.first_name }} {{ staff.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="new_permission_id" class="form-label">New Permission:</label>
+                <select class="form-select" name="new_permission_id" id="new_permission_id">
+                    {% for permission in permissions %}
+                    <option value="{{ permission.permission_id }}">
+                        ID: {{ permission.permission_id }} - Operator: {{ 'Yes' if permission.is_operator else 'No' }} - Admin: {{ 'Yes' if permission.is_admin else 'No' }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Permission</button>
+        <a href="{{ url_for('register', type='AirlineStaff') }}" class="btn btn-primary">Register New Airline Staff</a>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
