@@ -751,6 +751,156 @@ def top_customers_year():
     conn.close()
     return jsonify(top_customers)
 
+@app.route('/view-reports')
+def view_reports():
+    return render_template('view-reports.html')
 
+@app.route('/api/view-reports', methods=['POST'])
+def view_reports_form():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login', type='AirlineStaff'))
+    
+    start_date = request.get_json()['start_date']
+    end_date = request.get_json()['end_date']
+    
+    # get airline
+    query = """
+        SELECT name_airline
+        FROM airline_staff
+        WHERE username = %s
+    """
+    
+    cursor.execute(query, (user_id,))
+    airline_name = cursor.fetchone()['name_airline']
+    print(airline_name)
+    
+    return_data = {}
+    
+    data = request.get_json()
+    predet_range = data['range']
+    start_date = data['start_date']
+    end_date = data['end_date']
+    
+    if predet_range == "year":
+        query = """
+            SELECT COUNT(*) AS tickets_sold, SUM(f.price) AS total_revenue
+            FROM flight f
+            JOIN ticket t ON f.flight_num = t.flight_num
+            JOIN purchase p ON t.ticket_id = p.ticket_id
+            WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE() AND f.name_airline = %s
+        """
+    elif predet_range == "month":
+        query = """
+            SELECT COUNT(*) AS tickets_sold, SUM(f.price) AS total_revenue
+            FROM flight f
+            JOIN ticket t ON f.flight_num = t.flight_num
+            JOIN purchase p ON t.ticket_id = p.ticket_id
+            WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND p.date <= CURDATE() AND f.name_airline = %s
+        """
+    elif predet_range == "week":
+        query = """
+            SELECT COUNT(*) AS tickets_sold, SUM(f.price) AS total_revenue
+            FROM flight f
+            JOIN ticket t ON f.flight_num = t.flight_num
+            JOIN purchase p ON t.ticket_id = p.ticket_id
+            WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK) AND p.date <= CURDATE() AND f.name_airline = %s
+        """
+    else:
+        start_date = data['start_date']
+        end_date = data['end_date']
+    
+        query = """
+            SELECT COUNT(*) AS tickets_sold, SUM(f.price) AS total_revenue
+            FROM flight f
+            JOIN ticket t ON f.flight_num = t.flight_num
+            JOIN purchase p ON t.ticket_id = p.ticket_id
+            WHERE p.date >= %s AND p.date <= %s AND f.name_airline = %s
+        """
+    
+    if not predet_range:
+        cursor.execute(query, (start_date, end_date, airline_name))
+    else:
+        cursor.execute(query, (airline_name,))
+        
+    tickets_sold = cursor.fetchone()
+    print(tickets_sold)
+    if not tickets_sold['tickets_sold']:
+        tickets_sold['tickets_sold'] = 0
+        tickets_sold['total_revenue'] = 0
+    return_data['tickets_sold'] = tickets_sold
+    
+    # direct sales 1 month
+    query = """
+        SELECT SUM(f.price) AS total_revenue
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND p.date <= CURDATE() AND p.agent_email IS NULL AND f.name_airline = %s
+    """
+    
+    cursor.execute(query, (airline_name,))
+    direct_sales_month = cursor.fetchone()
+    print(direct_sales_month)
+    if not direct_sales_month['total_revenue']:
+        direct_sales_month['total_revenue'] = 0
+    return_data['direct_sales_month'] = direct_sales_month
+    
+    # indirect sales month
+    query = """
+        SELECT SUM(f.price) AS total_revenue
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND p.date <= CURDATE() AND p.agent_email IS NOT NULL AND f.name_airline = %s
+    """
+    
+    cursor.execute(query, (airline_name,))
+    indirect_sales_month = cursor.fetchone()
+    print(indirect_sales_month)
+    if not indirect_sales_month['total_revenue']:
+        indirect_sales_month['total_revenue'] = 0
+    return_data['indirect_sales_month'] = indirect_sales_month
+    
+    # direct sales year
+    query = """
+        SELECT SUM(f.price) AS total_revenue
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE() AND p.agent_email IS NULL AND f.name_airline = %s
+    """
+    
+    cursor.execute(query, (airline_name,))
+    direct_sales_year = cursor.fetchone()
+    print(direct_sales_year)
+    if not direct_sales_year['total_revenue']:
+        direct_sales_year['total_revenue'] = 0
+    return_data['direct_sales_year'] = direct_sales_year
+    
+    # indirect sales year
+    query = """
+        SELECT SUM(f.price) AS total_revenue
+        FROM flight f
+        JOIN ticket t ON f.flight_num = t.flight_num
+        JOIN purchase p ON t.ticket_id = p.ticket_id
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE() AND p.agent_email IS NOT NULL AND f.name_airline = %s
+    """
+    
+    cursor.execute(query, (airline_name,))
+    indirect_sales_year = cursor.fetchone()
+    print(indirect_sales_year)
+    if not indirect_sales_year['total_revenue']:
+        indirect_sales_year['total_revenue'] = 0
+    return_data['indirect_sales_year'] = indirect_sales_year
+    
+    cursor.close()
+    conn.close()
+    
+    print("return_data", return_data)
+    return jsonify(return_data)
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='127.0.0.1')

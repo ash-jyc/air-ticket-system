@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
         .then(response => response.json())
         .then(data => {
-            displayCustomers(data, "This Year");
+            displayReports(data, "This Year");
         })
         .catch(error => {
             console.error('Error fetching the agents:', error);
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
         .then(response => response.json())
         .then(data => {
-            displayCustomers(data, "This Month");
+            displayReports(data, "This Month");
         })
         .catch(error => {
             console.error('Error fetching the agents:', error);
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
             .then(response => response.json())
             .then(data => {
-                displayCustomers(data, "");
+                displayReports(data, "");
             })
             .catch(error => {
                 console.error('Error fetching the agents:', error);
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-function displayCustomers(agents, timePeriod) {
+function displayReports(agents, timePeriod) {
     console.log(timePeriod)
     console.log(agents)
     const topAgentsContainer = document.getElementById('top-agents-container');

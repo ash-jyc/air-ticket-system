@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/view-reports.js') }}"></script>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block title %}My Flights{% endblock %}
+
+    {% block content %}
+    <div id="home-container">
+        <h1>Airline Staff</h1>
+        <form id="upcoming-flights-form">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date">
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date">
+            <div id="range-container">
+                <label for="range">Range:</label>
+                <select id="range" name="range">
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                    <option value="year">Yearly</option>
+                </select>
+            </div>
+            
+            <button type="submit">View Agents</button>
+        </form>
+        <div id="reports-container"></div>
+    </div>
+    {% endblock %}
+</body>

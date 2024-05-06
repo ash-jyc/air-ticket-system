@@ -7,20 +7,23 @@
 </head>
 <body>
     <header>
-        <button onclick="location.href='{{ url_for('home') }}'">Home</button>
-        <button onclick="location.href='{{ url_for('search_flights') }}'">Search Flights</button>
-        <button onclick="location.href='{{ url_for('flight_status') }}'">Check Flight Status</button>
-
-        {% if 'user_id' in session %}
-            
-            {% if session['user_type'] == 'AirlineStaff' %}
-                <button onclick="location.href='{{ url_for('view_top_agents') }}'">View Top Agents</button>
-                <button onclick="location.href='{{ url_for('view_top_customers') }}'">View Top Customers</button>
+        <div class="buttonContainer">
+            <button onclick="location.href='{{ url_for('home') }}'">Home</button>
+            <button onclick="location.href='{{ url_for('search_flights') }}'">Search Flights</button>
+            <button onclick="location.href='{{ url_for('flight_status') }}'">Check Flight Status</button>
+    
+            {% if 'user_id' in session %}
+                
+                {% if session['user_type'] == 'AirlineStaff' %}
+                    <button onclick="location.href='{{ url_for('view_top_agents') }}'">View Top Agents</button>
+                    <button onclick="location.href='{{ url_for('view_top_customers') }}'">View Top Customers</button>
+                    <button onclick="location.href='{{ url_for('view_reports') }}'">View Reports</button>
+                {% endif %}
+                <button onclick="location.href='{{ url_for('logout') }}'">Logout</button>
+            {% else %}
+                <button onclick="location.href='{{ url_for('select_type') }}'">Login</button>
             {% endif %}
-            <button onclick="location.href='{{ url_for('logout') }}'">Logout</button>
-        {% else %}
-            <button onclick="location.href='{{ url_for('select_type') }}'">Login</button>
-        {% endif %}
+        </div>
     </header>
     {% block content %}{% endblock %}
 </body>

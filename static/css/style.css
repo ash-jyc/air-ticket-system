@@ -44,7 +44,7 @@ label {
 }
 
 button {
-    width: 70%;
+    width: 100%;
     padding: 12px 0;
     background-color: #711a64;
     color: white;
@@ -53,6 +53,13 @@ button {
     cursor: pointer;
     font-size: 18px;
     margin-top: 10px;
+}
+
+button:is(#year, #month, #week) {
+    width: 30%;
+    background-color: #711a648f;
+    padding: 5px 0;
+    font-size: 14px;
 }
 
 button:hover {
@@ -77,6 +84,10 @@ li {
         padding: 20px;
         margin: 20px;
     }
+}
+
+.button-container {
+    display: flex;
 }
 
 .container {

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
         .then(response => response.json())
         .then(data => {
-            displayCustomers(data, "This Year");
+            displayReports(data, "This Year");
         })
         .catch(error => {
             console.error('Error fetching the customers:', error);
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-function displayCustomers(customers, timePeriod) {
+function displayReports(customers, timePeriod) {
     console.log(timePeriod)
     console.log(customers)
     const topCustomersContainer = document.getElementById('top-customers-container');
