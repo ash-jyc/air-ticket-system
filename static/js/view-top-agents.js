@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
         .then(response => response.json())
         .then(data => {
-            displayAgents(data, "This Year");
+            displayCustomers(data, "This Year");
         })
         .catch(error => {
             console.error('Error fetching the agents:', error);
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
         .then(response => response.json())
         .then(data => {
-            displayAgents(data, "This Month");
+            displayCustomers(data, "This Month");
         })
         .catch(error => {
             console.error('Error fetching the agents:', error);
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
             .then(response => response.json())
             .then(data => {
-                displayAgents(data, "");
+                displayCustomers(data, "");
             })
             .catch(error => {
                 console.error('Error fetching the agents:', error);
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-function displayAgents(agents, timePeriod) {
+function displayCustomers(agents, timePeriod) {
     console.log(timePeriod)
     console.log(agents)
     const topAgentsContainer = document.getElementById('top-agents-container');
@@ -61,10 +61,10 @@ function displayAgents(agents, timePeriod) {
 
     const agentsContainer = document.createElement('div');
     agentsContainer.id = 'agents-container';
+    agentsContainer.className = 'info-container';
     agentsContainer.innerHTML = '';  // Clear previous results
 
     // Create and append the elements for each agent
-    agents = agents.reverse();
     agents.forEach((agent, i) => {
         console.log(agent, i)
         const agentDiv = document.createElement('div');
@@ -73,6 +73,7 @@ function displayAgents(agents, timePeriod) {
             <p>✨ Rank: ${i + 1} ✨</p>
             <p>Agent ID: ${agent.booking_agent_id}</p>
             <p>Email: ${agent.email}</p>
+            <p>Commission earned: ¥${agent.commission_earned.toFixed(2)}</p>
         `;
         console.log(agentDiv)
         agentsContainer.appendChild(agentDiv);

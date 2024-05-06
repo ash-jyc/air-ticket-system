@@ -23,7 +23,7 @@ def get_db_connection():
 ## Index
 @app.route('/')
 def index():
-    return redirect(url_for('select_type'))
+    return redirect(url_for('search_flights'))
 
 ## Select user type
 @app.route('/select-type')
@@ -180,7 +180,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('user_type', None)
-    return redirect(url_for('select_type'))
+    return redirect(url_for('index'))
 
 ## Choose home page based on user type
 @app.route('/home')
@@ -243,8 +243,9 @@ def search_flights_form():
 @app.route('/api/book-flight', methods=['POST'])
 def book_flight():
     user_id = session.get('user_id')
-    if not user_id:  
-        return redirect(url_for('login'))
+    print(user_id)
+    if not user_id:
+        return jsonify({'redirect': '/select-type', 'message': 'Please log in to book a flight'})
     
     print("user_id", user_id)
     
@@ -301,7 +302,7 @@ def book_flight():
         if not booking_agent_id:
             return jsonify({'error': 'Booking agent does not work for airline'})
                 
-        return jsonify({'redirect': '/book-with-agent', 'flight_number': flight_number})
+        return jsonify({'redirect': '/book-with-agent?flight_number=' + flight_number})
     
     conn.commit()
     cursor.close()
@@ -373,7 +374,7 @@ def my_flights_form():
 def track_spending():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='Customer'))
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -490,7 +491,7 @@ def get_top_customers():
 def book_with_agent():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='BookingAgent'))
     
     return render_template('book-with-agent.html')
 
@@ -498,7 +499,7 @@ def book_with_agent():
 def book_with_agent_form():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='BookingAgent'))
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -561,7 +562,7 @@ def staff_home():
 def staff_flights():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='AirlineStaff'))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -603,9 +604,9 @@ def staff_flights():
         return jsonify(flights)
 
 ## STAFF - view airline info
-@app.route('/staff-airline-info')
-def staff_airline_info():
-    return render_template('staff-airline-info.html')
+@app.route('/view-top-agents')
+def view_top_agents():
+    return render_template('view-top-agents.html')
 
 ## STAFF - view top booking agents
 @app.route('/api/top-agents-month', methods=['GET'])
@@ -615,16 +616,18 @@ def top_agents_month():
     
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='AirlineStaff'))
     
-    # top 5 agents for the past month
+    # top 5 agents for the past month based off commission
     query = """
-        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        SELECT b.booking_agent_id, b.email, SUM(f.price * b.comission) AS commission_earned
         FROM booking_agent b
         JOIN purchase p ON b.email = p.agent_email
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.flight_num = f.flight_num
         WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND p.date <= CURDATE()
         GROUP BY b.booking_agent_id
-        ORDER BY tickets_sold DESC
+        ORDER BY commission_earned DESC
         LIMIT 5
     """
     
@@ -643,16 +646,18 @@ def top_agents_year():
     
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='AirlineStaff'))
     
     # top 5 agents for the past month
     query = """
-        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        SELECT b.booking_agent_id, b.email, SUM(f.price * b.comission) AS commission_earned
         FROM booking_agent b
         JOIN purchase p ON b.email = p.agent_email
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.flight_num = f.flight_num
         WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE()
         GROUP BY b.booking_agent_id
-        ORDER BY tickets_sold DESC
+        ORDER BY commission_earned DESC
         LIMIT 5
     """
     
@@ -671,7 +676,7 @@ def top_agents_spec():
     
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('login', type='AirlineStaff'))
     
     start_date = request.get_json()['start_date']
     end_date = request.get_json()['end_date']
@@ -679,12 +684,14 @@ def top_agents_spec():
     print(start_date, end_date)
     # top 5 agents for the past month
     query = """
-        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        SELECT b.booking_agent_id, b.email, SUM(f.price * b.comission) AS commission_earned
         FROM booking_agent b
         JOIN purchase p ON b.email = p.agent_email
+        JOIN ticket t ON p.ticket_id = t.ticket_id
+        JOIN flight f ON t.flight_num = f.flight_num
         WHERE p.date >= %s AND p.date <= %s
         GROUP BY b.booking_agent_id
-        ORDER BY tickets_sold DESC
+        ORDER BY commission_earned DESC
         LIMIT 5
     """
     
@@ -695,5 +702,55 @@ def top_agents_spec():
     cursor.close()
     conn.close()
     return jsonify(top_agents)
+
+## STAFF - view top customers for airline in last year
+@app.route('/view-top-customers')
+def view_top_customers():
+    return render_template('view-top-customers.html')
+
+@app.route('/api/top-customers-year', methods=['GET'])
+def top_customers_year():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login', type='AirlineStaff'))
+    
+    # get airline
+    query = """
+        SELECT name_airline
+        FROM airline_staff
+        WHERE username = %s
+    """
+    
+    cursor.execute(query, (user_id,))
+    airline_name = cursor.fetchone()['name_airline']
+    print(airline_name)
+    
+    # top 5 customers for the past year
+    query = """
+        SELECT c.email, c.name, COUNT(*) AS tickets_purchased
+        FROM customer c
+        JOIN purchase p ON c.email = p.customer_email
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE() AND p.agent_email IN (
+            SELECT email FROM booking_agent WHERE email IN (
+                SELECT agent_email FROM works_for WHERE airline_name = %s
+            )
+        )
+        GROUP BY c.email
+        ORDER BY tickets_purchased DESC
+        LIMIT 5
+    """
+    
+    cursor.execute(query, (airline_name,))
+    top_customers = cursor.fetchall()
+    print(top_customers)
+    
+    cursor.close()
+    conn.close()
+    return jsonify(top_customers)
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='127.0.0.1')

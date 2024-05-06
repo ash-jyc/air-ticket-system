@@ -44,7 +44,7 @@ label {
 }
 
 button {
-    width: 100%;
+    width: 70%;
     padding: 12px 0;
     background-color: #711a64;
     color: white;
@@ -130,7 +130,7 @@ li {
     overflow-y: auto;
 }
 
-#agents-container {
+.info-container {
     width: 100%;
     background: rgba(0, 0, 0, 0.9);
     padding: 5px;

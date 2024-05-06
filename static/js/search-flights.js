@@ -83,7 +83,7 @@ function bookFlight(flightNumber) {
     .then(response => response.json())
     .then(data => {
         if (data.redirect) {
-            window.location.href = data.redirect + '?flight_number=' + flightNumber;
+            window.location.href = data.redirect;
         } else {
             if (data.error) {
                 console.error('Error booking the flight:', data.error);
