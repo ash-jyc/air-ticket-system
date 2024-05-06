@@ -180,7 +180,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('user_type', None)
-    return redirect(url_for('login'))
+    return redirect(url_for('select_type'))
 
 ## Choose home page based on user type
 @app.route('/home')
@@ -586,12 +586,6 @@ def staff_flights():
     else: 
         start_date = request.get_json()['start_date']
         end_date = request.get_json()['end_date']
-
-        """View My flights: Defaults will be showing all the upcoming flights operated by the airline he/she works for
-    the next 30 days. He/she will be able to see all the current/future/past flights operated by the airline he/she
-    works for based range of dates, source/destination airports/city etc. He/she will be able to see all the
-    customers of a particular flight.
-        """
         
         query = """
             SELECT f.flight_num, f.status, f.depart_time, f.arrive_time, f.price
@@ -608,5 +602,98 @@ def staff_flights():
         conn.close()
         return jsonify(flights)
 
+## STAFF - view airline info
+@app.route('/staff-airline-info')
+def staff_airline_info():
+    return render_template('staff-airline-info.html')
+
+## STAFF - view top booking agents
+@app.route('/api/top-agents-month', methods=['GET'])
+def top_agents_month():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    # top 5 agents for the past month
+    query = """
+        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        FROM booking_agent b
+        JOIN purchase p ON b.email = p.agent_email
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND p.date <= CURDATE()
+        GROUP BY b.booking_agent_id
+        ORDER BY tickets_sold DESC
+        LIMIT 5
+    """
+    
+    cursor.execute(query)
+    top_agents = cursor.fetchall()
+    print(top_agents)
+    
+    cursor.close()
+    conn.close()
+    return jsonify(top_agents)
+
+@app.route('/api/top-agents-year', methods=['GET'])
+def top_agents_year():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    # top 5 agents for the past month
+    query = """
+        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        FROM booking_agent b
+        JOIN purchase p ON b.email = p.agent_email
+        WHERE p.date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND p.date <= CURDATE()
+        GROUP BY b.booking_agent_id
+        ORDER BY tickets_sold DESC
+        LIMIT 5
+    """
+    
+    cursor.execute(query)
+    top_agents = cursor.fetchall()
+    print(top_agents)
+    
+    cursor.close()
+    conn.close()
+    return jsonify(top_agents)
+
+@app.route('/api/top-agents-spec', methods=['POST'])
+def top_agents_spec():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    start_date = request.get_json()['start_date']
+    end_date = request.get_json()['end_date']
+    
+    print(start_date, end_date)
+    # top 5 agents for the past month
+    query = """
+        SELECT b.booking_agent_id, b.email, COUNT(*) AS tickets_sold
+        FROM booking_agent b
+        JOIN purchase p ON b.email = p.agent_email
+        WHERE p.date >= %s AND p.date <= %s
+        GROUP BY b.booking_agent_id
+        ORDER BY tickets_sold DESC
+        LIMIT 5
+    """
+    
+    cursor.execute(query, (start_date, end_date))
+    top_agents = cursor.fetchall()
+    print(top_agents)
+    
+    cursor.close()
+    conn.close()
+    return jsonify(top_agents)
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='127.0.0.1')

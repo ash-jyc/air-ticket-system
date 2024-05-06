@@ -10,6 +10,16 @@
         <button onclick="location.href='{{ url_for('home') }}'">Home</button>
         <button onclick="location.href='{{ url_for('search_flights') }}'">Search Flights</button>
         <button onclick="location.href='{{ url_for('flight_status') }}'">Check Flight Status</button>
+
+        {% if 'user_id' in session %}
+            
+            {% if session['user_type'] == 'AirlineStaff' %}
+                <button onclick="location.href='{{ url_for('staff_airline_info') }}'">Manage Airline</button>
+            {% endif %}
+            <button onclick="location.href='{{ url_for('logout') }}'">Logout</button>
+        {% else %}
+            <button onclick="location.href='{{ url_for('login') }}'">Login</button>
+        {% endif %}
     </header>
     {% block content %}{% endblock %}
 </body>
