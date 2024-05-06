@@ -570,5 +570,68 @@ def agent_home():
         return render_template('agent-home.html')
     return redirect(url_for('login', type='BookingAgent'))
 
+"""Airline staff
+
+Keyword arguments:
+user_id -- user's ID
+"""
+
+@app.route('/staff-home')
+def staff_home():
+    if 'user_type' in session and session['user_type'] == 'AirlineStaff':
+        return render_template('staff-home.html')
+    return redirect(url_for('login', type='AirlineStaff'))
+
+@app.route('/api/staff-flights', methods=['GET', 'POST'])
+def staff_flights():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'GET':
+        
+        today = 'CURDATE()'
+        end_date = 'DATE_ADD(CURDATE(), INTERVAL 30 DAY)' 
+        
+        query = f"""
+            SELECT f.flight_num, f.status, f.depart_time, f.arrive_time, f.price
+            FROM flight f
+            WHERE f.depart_time >= {today} AND f.depart_time <= {end_date} AND f.name_airline = (
+                SELECT name_airline FROM airline_staff WHERE username = %s
+            )
+        """
+        cursor.execute(query, (user_id,))
+        flights = cursor.fetchall()
+        print(flights)
+        return jsonify(flights)
+    
+    else: 
+        start_date = request.get_json()['start_date']
+        end_date = request.get_json()['end_date']
+
+        """View My flights: Defaults will be showing all the upcoming flights operated by the airline he/she works for
+    the next 30 days. He/she will be able to see all the current/future/past flights operated by the airline he/she
+    works for based range of dates, source/destination airports/city etc. He/she will be able to see all the
+    customers of a particular flight.
+        """
+        
+        query = """
+            SELECT f.flight_num, f.status, f.depart_time, f.arrive_time, f.price
+            FROM flight f
+            WHERE f.depart_time >= %s AND f.depart_time <= %s AND f.name_airline = (
+                SELECT name_airline FROM airline_staff WHERE username = %s
+            )
+        """
+        cursor.execute(query, (start_date, end_date, user_id))
+        flights = cursor.fetchall()
+        print(flights)
+
+        cursor.close()
+        conn.close()
+        return jsonify(flights)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001, host='127.0.0.1')

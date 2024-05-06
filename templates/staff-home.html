@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Home</title>
+    <script src="{{ url_for('static', filename='js/airline-staff.js') }}"></script>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block title %}My Flights{% endblock %}
+
+    {% block content %}
+    <div id="home-container">
+        <h3>Airline Staff</h3>
+        <form id="upcoming-flights-form">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date">
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date">
+            <button type="submit">View Upcoming</button>
+        </form>
+    </div>
+
+    {% endblock %}
+</body>

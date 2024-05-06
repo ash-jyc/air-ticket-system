@@ -15,7 +15,7 @@ body {
 }
 
 /* General form styles */
-form:not(#commission-form) {
+form:not(#commission-form, #upcoming-flights-form) {
     background: rgba(0, 0, 0, 0.9);
     padding: 30px;
     border-radius: 8px;
